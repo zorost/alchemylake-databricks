@@ -82,6 +82,26 @@ DEFAULT_SAVE_DIR = os.environ.get(
 _FAVICON_PATH = os.path.join(APP_DIR, "assets", "favicon.png")
 PAGE_ICON = _FAVICON_PATH if os.path.exists(_FAVICON_PATH) else "◈"
 
+
+def _inline_mark_data_uri() -> str:
+    """Base64 data URI for the small transparent crest (sidebar + masthead).
+
+    Streamlit's markdown has no server route for local files, so a same-origin
+    <img> needs either a public URL or an inlined data URI — the crest is tiny
+    (~25KB) and rendered on every page, so inlining avoids an extra request.
+    """
+    path = os.path.join(APP_DIR, "assets", "mark.png")
+    try:
+        with open(path, "rb") as f:
+            import base64
+
+            return "data:image/png;base64," + base64.b64encode(f.read()).decode()
+    except OSError:
+        return ""
+
+
+_MARK_URI = _inline_mark_data_uri()
+
 st.set_page_config(
     page_title="AlchemyLake · Governed Creative",
     page_icon=PAGE_ICON,
@@ -305,6 +325,7 @@ st.markdown(
         line-height: 1.04; color: var(--ivory);
       }
       .al-mast svg { margin: 6px 4px 0; opacity: 0.9; }
+      .al-mast-crest { width:54px; height:54px; margin:0 auto 2px; display:block; opacity:0.96; }
 
       /* one-line tagline under the band — small on purpose, the masthead
          above it already carries the weight */
@@ -313,9 +334,11 @@ st.markdown(
 
       /* sidebar wordmark — same mark as app.alchemylake.com's left rail,
          just "Alchemy Lake", no sub-brand line */
+      .al-side-mark-row { display:flex; align-items:center; gap:8px; margin:2px 0 0; }
+      .al-side-mark-row img { width:26px; height:26px; flex-shrink:0; opacity:0.96; }
       .al-side-mark { font-family:'Cormorant Garamond',Georgia,serif; font-weight:600;
                        font-size: 25px; text-transform: uppercase; letter-spacing: 0.13em;
-                       line-height: 1.12; color: var(--ivory); margin: 2px 0 0; }
+                       line-height: 1.12; color: var(--ivory); margin: 0; }
       .al-side-mark span { color: var(--gold-bright); }
 
       /* enterprise control card — the shared shell for every lane's
@@ -472,8 +495,10 @@ def _check_wallet(key: str, url: str) -> None:
 
 
 with st.sidebar:
+    _mark_img = f'<img src="{_MARK_URI}" alt="">' if _MARK_URI else ""
     st.markdown(
-        '<div class="al-side-mark">Alchemy<br><span>Lake</span></div>'
+        f'<div class="al-side-mark-row">{_mark_img}'
+        '<div class="al-side-mark">Alchemy<br><span>Lake</span></div></div>'
         '<div class="al-kicker" style="margin:9px 0 14px">Connection</div>',
         unsafe_allow_html=True,
     )
@@ -570,9 +595,11 @@ _DATA_RESIDENCY_HTML = (
     f'your own Model Serving), see <a href="{DOCS_URL}#residency">Data security &amp; residency</a>.'
 )
 
+_mast_crest = f'<img class="al-mast-crest" src="{_MARK_URI}" alt="">' if _MARK_URI else ""
 st.markdown(
     f"""
     <div class="al-mast">
+      {_mast_crest}
       <div class="al-kicker">Governed creative · inside your lakehouse</div>
       <div class="al-word">Alchemy<br>Lake</div>
       <div>{_ICON_WAVE}{_ICON_SUN}</div>
