@@ -13,6 +13,30 @@ dossiers with a statistical appendix and an Excel evidence workbook**, designed
 two-host **data podcasts** (five formats), and **sonified scores** (six
 genres) whose tempo follows your growth.
 
+## Get started free — no card required
+
+1. **[Sign up](https://app.alchemylake.com/sign-up)** — 50 free credits land in
+   your account immediately, nothing to enter but an email.
+2. **Grab a developer key** — sign in at [app.alchemylake.com](https://app.alchemylake.com) →
+   **Studio → Developer · MCP & keys → Forge a new key** (starts with `alk_…`).
+3. **Clone this repo and deploy it** into your Databricks workspace:
+   ```bash
+   git clone https://github.com/zorost/alchemylake-databricks.git
+   cd alchemylake-databricks
+   # edit the workspace host in databricks.yml (see Path 1 below), then:
+   databricks bundle deploy -t prod
+   databricks bundle run alchemylake_app -t prod
+   ```
+4. Open the App URL the CLI prints, paste your key, then **Load governed
+   sources → pick one → Transmute.**
+
+That's a governed PDF, deck, infographic, or video briefing — sealed to your
+own data, running inside your own workspace — for free, in about five minutes.
+No Databricks Apps on your workspace? Skip straight to
+[Path 2](#path-2--register-alchemylake-as-an-mcp-server-genie--agent-bricks) —
+register one URL and Genie, Claude, or Cursor get the same 50 free credits to
+work with, no bundle required.
+
 **Every lane binds to a governed source**, and the numbers discipline holds
 throughout: the platform computes an analyst-grade statistical dossier from the
 bound rows by code — trend with fit quality, outliers, correlations, segment
