@@ -1,0 +1,22 @@
+# Databricks CLI local state
+.databricks/
+.vscode/
+
+# deps
+.venv/
+.venv-*/
+__pycache__/
+*.pyc
+
+# env & secrets — never commit
+.env
+.env.*
+!.env.example
+
+# os / editor
+.DS_Store
+.idea/
+*.code-workspace
+
+# logs
+*.log

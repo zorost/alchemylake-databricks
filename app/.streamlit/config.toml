@@ -1,0 +1,11 @@
+# AlchemyLake — Lapis Plate theme (matches app.alchemylake.com)
+[theme]
+base = "dark"
+primaryColor = "#E4C067"          # gold — buttons, focus, active states
+backgroundColor = "#0D1338"       # abyss — working background
+secondaryBackgroundColor = "#172478"  # basalt — cards, sidebar, inputs
+textColor = "#F3EDDF"             # ivory ink
+font = "monospace"
+
+[browser]
+gatherUsageStats = false

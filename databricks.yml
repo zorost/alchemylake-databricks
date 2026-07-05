@@ -1,0 +1,62 @@
+# AlchemyLake — Databricks Asset Bundle
+# =====================================
+# One command puts a governed AlchemyLake render surface inside your workspace:
+#
+#     databricks bundle deploy  -t prod
+#     databricks bundle run alchemylake_app -t prod
+#
+# The App is SSO-authenticated by Databricks and runs on your workspace compute.
+# In this connected mode it calls the AlchemyLake platform over MCP, so the rows
+# you bind (and your prompt) are sent to AlchemyLake to produce and seal each
+# render — never used for training. For a no-egress deployment where inference
+# runs entirely inside your workspace (Foundation Model APIs + Model Serving), see
+# https://app.alchemylake.com/docs#residency.
+#
+# Prereqs: Databricks CLI >= 0.230, workspace with Databricks Apps enabled,
+# and an AlchemyLake developer key (Studio -> Developer -> Forge a new key).
+
+bundle:
+  name: alchemylake
+
+# EDIT ME: replace the host below with your workspace URL (Databricks auto-selects
+# the matching CLI profile). Find it in the browser address bar when signed in, or
+# run `databricks auth profiles`.
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://your-workspace.cloud.databricks.com
+
+  prod:
+    mode: production
+    workspace:
+      host: https://your-workspace.cloud.databricks.com
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+resources:
+  apps:
+    alchemylake_app:
+      name: alchemylake
+      description: "AlchemyLake — governed creative (narrative + imagery) sealed to your data."
+      source_code_path: ./app
+      config:
+        command:
+          - streamlit
+          - run
+          - app.py
+          - --server.port
+          - "8000"
+          - --server.address
+          - "0.0.0.0"
+        env:
+          - name: ALCHEMYLAKE_MCP_URL
+            value: "https://app.alchemylake.com/api/mcp"
+          # EDIT ME: pre-fills "Save to Databricks" on every result card. Point
+          # this at a volume that exists in your workspace — this App's service
+          # principal needs WRITE_VOLUME there (see app/app.yaml).
+          - name: ALCHEMYLAKE_SAVE_DIR
+            value: "/Volumes/main/default/alchemylake_outputs"
+          # Uncomment after creating the secret scope/key (see app/app.yaml):
+          # - name: ALCHEMYLAKE_API_KEY
+          #   valueFrom: "alchemylake-api-key"

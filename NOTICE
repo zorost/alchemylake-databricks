@@ -1,0 +1,11 @@
+AlchemyLake for Databricks
+Copyright 2026 Zorost Intelligence
+
+This product includes software developed by Zorost Intelligence
+(https://www.alchemylake.com).
+
+This directory (the Databricks Asset Bundle: App, `ai_render()` SQL function,
+and supporting files) is licensed separately from the rest of the AlchemyLake
+repository — see LICENSE in this directory. It is a client of the hosted
+AlchemyLake platform, which remains a separate, proprietary service governed
+by AlchemyLake's Terms of Service (https://app.alchemylake.com/legal/terms).

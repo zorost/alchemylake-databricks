@@ -1,0 +1,35 @@
+# AlchemyLake — Databricks App runtime config.
+#
+# When deployed via the Asset Bundle (../databricks.yml), the bundle's
+# resources.apps.*.config block takes precedence over this file. This file lets
+# the app also be deployed/run directly with `databricks apps deploy`.
+
+command:
+  - streamlit
+  - run
+  - app.py
+  - --server.port
+  - "8000"
+  - --server.address
+  - "0.0.0.0"
+
+env:
+  - name: ALCHEMYLAKE_MCP_URL
+    value: "https://app.alchemylake.com/api/mcp"
+
+  # EDIT ME: pre-fills the "Save to Databricks" destination on every result
+  # card. Point this at a volume that exists in your workspace — this App's
+  # own service principal needs WRITE_VOLUME on it (or CAN_EDIT on a
+  # /Workspace/... folder instead) — see the Docs tab -> "Save to Databricks"
+  # for the one-time grant.
+  - name: ALCHEMYLAKE_SAVE_DIR
+    value: "/Volumes/main/default/alchemylake_outputs"
+
+  # Recommended: bind your AlchemyLake developer key from a Databricks secret so
+  # analysts never paste it. Create the secret, then uncomment:
+  #
+  #   databricks secrets create-scope alchemylake
+  #   databricks secrets put-secret alchemylake api_key   # paste alk_...
+  #
+  # - name: ALCHEMYLAKE_API_KEY
+  #   valueFrom: "alchemylake-api-key"   # app resource -> secret scope/key
