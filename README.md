@@ -27,6 +27,8 @@ genres) whose tempo follows your growth.
    databricks bundle deploy -t prod
    databricks bundle run alchemylake_app -t prod
    ```
+   Tracking `main` gets you the latest build; `git checkout v0.4.0` first pins
+   the deploy to a tagged release instead, if you'd rather not move with `main`.
 4. Open the App URL the CLI prints, paste your key, then **Load governed
    sources → pick one → Transmute.**
 
