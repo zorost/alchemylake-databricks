@@ -763,6 +763,31 @@ def source_options(sources: list[dict[str, Any]], unbound_label: str) -> dict[st
     return options
 
 
+def _source_picker(key: str) -> str:
+    """Governed-source selector shared by every lane (same session cache).
+
+    Defined here — before any tab body runs — because Streamlit executes the
+    script top to bottom and the Deep Research tab is the first caller.
+    """
+    if st.button("Load governed sources", key=f"{key}_load", use_container_width=True):
+        try:
+            st.session_state["sources"] = load_sources(api_key, mcp_url)
+        except MCPError as exc:
+            st.error(str(exc))
+    sources = st.session_state.get("sources", [])
+    options = source_options(sources, "— Unbound (free prompt) —")
+    choice = st.selectbox("Bound source", list(options.keys()), key=f"{key}_src")
+    source_id = options[choice]
+    if source_id:
+        picked = next((s for s in sources if s.get("id") == source_id), {})
+        st.markdown(
+            f'<div class="al-kicker">rows: {picked.get("row_count", "?")} · '
+            f'origin: {picked.get("origin", "?")}</div>',
+            unsafe_allow_html=True,
+        )
+    return source_id
+
+
 # --------------------------------------------------------------------------- #
 # Deliverable actions — download + Save to Databricks (every lane, one look)
 # --------------------------------------------------------------------------- #
@@ -1184,27 +1209,6 @@ with tab_research:
 # --------------------------------------------------------------------------- #
 # Media lanes: imagery, video, music, voice
 # --------------------------------------------------------------------------- #
-
-
-def _source_picker(key: str) -> str:
-    """Governed-source selector shared by every lane (same session cache)."""
-    if st.button("Load governed sources", key=f"{key}_load", use_container_width=True):
-        try:
-            st.session_state["sources"] = load_sources(api_key, mcp_url)
-        except MCPError as exc:
-            st.error(str(exc))
-    sources = st.session_state.get("sources", [])
-    options = source_options(sources, "— Unbound (free prompt) —")
-    choice = st.selectbox("Bound source", list(options.keys()), key=f"{key}_src")
-    source_id = options[choice]
-    if source_id:
-        picked = next((s for s in sources if s.get("id") == source_id), {})
-        st.markdown(
-            f'<div class="al-kicker">rows: {picked.get("row_count", "?")} · '
-            f'origin: {picked.get("origin", "?")}</div>',
-            unsafe_allow_html=True,
-        )
-    return source_id
 
 
 # Style/format libraries — ids must match apps/api/app/atelier.py exactly.
