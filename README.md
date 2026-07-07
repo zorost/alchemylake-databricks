@@ -364,6 +364,14 @@ specifically.
 
 ---
 
+## Documentation
+
+- [`docs/DEVELOPER_GUIDE.md`](./docs/DEVELOPER_GUIDE.md) — **CLI, REST API & MCP**: get a key, every command, VS Code/Cursor/Claude setup, use cases, Python/Node examples, GitHub Actions.
+- [`docs/GENIE_GUIDE.md`](./docs/GENIE_GUIDE.md) — Genie integration: connect a space, health score, certification, all eight lanes, sharing model.
+- Platform docs: [app.alchemylake.com/docs](https://app.alchemylake.com/docs) (Studio walkthrough, credits, security).
+
+---
+
 ## Uninstall
 
 ```bash
