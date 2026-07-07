@@ -1,3 +1,7 @@
+<p align="center">
+  <img src=".github/sol-invictus-lapis.png" alt="AlchemyLake — Sol Invictus engraving on the lapis plate" width="640">
+</p>
+
 # AlchemyLake for Databricks
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](./LICENSE)
