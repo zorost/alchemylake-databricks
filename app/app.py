@@ -5,11 +5,14 @@ A Databricks App that runs in your workspace and calls the AlchemyLake platform
 over its MCP (Model Context Protocol) endpoint. It lets anyone in your workspace:
 
   • list the governed data sources bound to your AlchemyLake account
-    (built-in Sample Lakehouse, Unity Catalog tables, CSV/Excel uploads,
-    Genie-space answers),
+    (built-in Sample Lakehouse, Unity Catalog tables, CSV/Excel/PDF/DOCX
+    uploads, Genie-space answers) — and register new uploads right here,
   • generate narrative/copy that is *sealed* to a source — every figure
     traceable to the exact rows the model saw (source · row count · sha256),
-    then *verified*: numeric claims checked against platform-computed facts,
+    then *verified*: numeric claims checked against platform-computed facts —
+    with conversations that continue across turns (Genie included),
+  • run Deep Research: a planned multi-step investigation (sub-questions →
+    evidence → synthesis) sealed into a PDF dossier + Excel evidence workbook,
   • compose branded PDF reports whose every figure is substituted from the
     deterministic FACTS table, cited, verified, and sealed on the page,
   • run one-click recipe templates (KPI poster, executive one-pager, social
@@ -61,12 +64,13 @@ ENV_API_KEY = os.environ.get("ALCHEMYLAKE_API_KEY", "").strip()
 SIGNUP_URL = "https://app.alchemylake.com/sign-up"
 DOCS_URL = "https://app.alchemylake.com/docs"
 APP_VERSION = "0.4.0"  # keep in step with the MCP serverInfo.version
-# The platform's own lane ceiling runs well past 500s, and long-running
-# renders (video/music) can occasionally take 3-4 minutes — this must clear
-# that, or a perfectly healthy render gets reported to the user as a
-# client-side failure when it was actually still succeeding server-side.
+# The API's own lane ceiling is 540s (apps/api/app/engine.py LANE_TIMEOUT_SECONDS)
+# and the Next.js proxy allows up to 300s per hop — this must clear both, or a
+# perfectly healthy long-running render (video/music, occasionally 3-4 min)
+# gets reported to the user as a client-side failure when it was actually
+# still succeeding server-side.
 REQUEST_TIMEOUT = 600  # seconds — renders can take a while
-WELCOME_GRANT_CREDITS = 50  # keep in step with the sign-up grant shown at app.alchemylake.com/sign-up
+WELCOME_GRANT_CREDITS = 50  # keep in step with apps/api/app/config.py
 # Prefills the "Save to Databricks" destination so the button works out of
 # the box for this deployment's own workspace — a workspace admin points it
 # at whatever volume or folder this App's service principal was granted
@@ -149,11 +153,12 @@ st.markdown(
       }
       section[data-testid="stSidebar"] .stMarkdown p { color: var(--sand); }
 
-      /* Sidebar type scale: Streamlit's stock sizing (h1 ~36px, metric value
-         ~36px, input/paragraph text ~16px) is tuned for the wide main canvas,
-         not this ~21rem rail — it reads oversized and out of step with the
-         rest of the app's small-caps mono scale (tabs, kicker, foot all sit
-         at 11-12.5px). Bring every sidebar text element down to match. */
+      /* Sidebar type scale: Streamlit's stock sizing (h1 ~36px, input and
+         paragraph text ~16px) is tuned for the wide main canvas, not this
+         ~21rem rail — it reads oversized and out of step with the rest of
+         the app's small-caps mono scale (tabs, kicker, foot all sit at
+         11-12.5px). Bring the utility text down to match; the wallet figure
+         alone keeps display size (see the stMetric rules below). */
       section[data-testid="stSidebar"] h1 {
         font-size: 19px !important; line-height: 1.3 !important;
         margin: 2px 0 8px !important;
@@ -165,23 +170,46 @@ st.markdown(
       section[data-testid="stSidebar"] small {
         font-size: 11px !important; line-height: 1.55 !important;
       }
-      /* Endpoint + developer-key value text: one notch down from the sidebar
-         default so two long, technical strings stop dominating a ~21rem rail. */
+      /* Endpoint + developer-key fields: readable technical strings under a
+         small-caps label one notch below them. */
       section[data-testid="stSidebar"] .stTextInput input {
-        font-size: 10.5px !important;
+        font-size: 12px !important;
+        padding-top: 9px !important;
+        padding-bottom: 9px !important;
       }
       section[data-testid="stSidebar"] .stTextInput label,
       section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
-        font-size: 10px !important;
+        font-size: 11px !important;
+        letter-spacing: 0.15em !important;
       }
-      section[data-testid="stSidebar"] [data-testid="stMetricValue"] {
-        font-size: 23px !important;
+      /* Wallet figure — the one display number in the rail, so it alone keeps
+         headline size. Streamlit 1.57 renders the value as markdown: the
+         digits sit in a <p> INSIDE [data-testid="stMetricValue"], so sizing
+         only the container loses to the sidebar-wide `p { font-size: 11px
+         !important }` rule above (a direct hit on the <p> beats anything the
+         ancestor passes down by inheritance). Size the container AND every
+         descendant so the digits themselves carry the size. */
+      section[data-testid="stSidebar"] [data-testid="stMetric"] {
+        margin-top: 6px;
       }
-      section[data-testid="stSidebar"] [data-testid="stMetricLabel"] {
-        font-size: 10px !important;
+      section[data-testid="stSidebar"] [data-testid="stMetricValue"],
+      section[data-testid="stSidebar"] [data-testid="stMetricValue"] p,
+      section[data-testid="stSidebar"] [data-testid="stMetricValue"] * {
+        font-size: 46px !important;
+        line-height: 1.08 !important;
+        font-family: 'Cormorant Garamond', Georgia, serif !important;
+        font-weight: 600 !important;
+        color: var(--gold-bright) !important;
+      }
+      section[data-testid="stSidebar"] [data-testid="stMetricLabel"],
+      section[data-testid="stSidebar"] [data-testid="stMetricLabel"] p {
+        font-size: 11px !important;
+        letter-spacing: 0.16em !important;
       }
       section[data-testid="stSidebar"] .stButton>button {
-        font-size: 10.5px !important;
+        font-size: 12px !important;
+        padding-top: 9px !important;
+        padding-bottom: 9px !important;
       }
       section[data-testid="stSidebar"] [data-testid="stExpander"] summary,
       section[data-testid="stSidebar"] [data-testid="stExpander"] summary p,
@@ -189,11 +217,19 @@ st.markdown(
         font-size: 11px !important;
       }
       /* Sidebar hairline "hint" — the fine print under the key field. Meant
-         to be read once, not to compete with the field above it. */
+         to be read once, not to compete with the field above it. Set as a
+         small engraved note with real breathing room before the button row
+         below it, so the fine print never crowds "Check connection". */
       section[data-testid="stSidebar"] .al-hint {
-        font-size: 9.5px !important; line-height: 1.5 !important;
-        color: var(--mutedsand) !important; margin: 5px 0 0 !important;
+        font-size: 9.5px !important; line-height: 1.6 !important;
+        color: var(--mutedsand) !important;
+        margin: 10px 0 18px !important;
+        padding: 8px 10px !important;
+        border: 1px solid var(--hairline) !important;
+        border-left: 2px solid var(--gold-deep) !important;
+        background: rgba(13,19,56,0.55) !important;
       }
+      section[data-testid="stSidebar"] .al-hint code { font-size: 9px !important; }
 
       /* ── inputs: engraved sunken fields, sharp corners ── */
       .stTextInput input, .stTextArea textarea, .stNumberInput input {
@@ -325,21 +361,26 @@ st.markdown(
         line-height: 1.04; color: var(--ivory);
       }
       .al-mast svg { margin: 6px 4px 0; opacity: 0.9; }
-      .al-mast-crest { width:54px; height:54px; margin:0 auto 2px; display:block; opacity:0.96; }
+      .al-mast-crest { width:66px; height:66px; margin:0 auto 2px; display:block; opacity:0.96; }
 
       /* one-line tagline under the band — small on purpose, the masthead
          above it already carries the weight */
       .al-tagline { text-align:center; font-size:12.5px; color:var(--sand);
                     margin: 0 0 6px; letter-spacing: 0.02em; }
 
-      /* sidebar wordmark — same mark as app.alchemylake.com's left rail,
-         just "Alchemy Lake", no sub-brand line */
-      .al-side-mark-row { display:flex; align-items:center; gap:8px; margin:2px 0 0; }
-      .al-side-mark-row img { width:26px; height:26px; flex-shrink:0; opacity:0.96; }
+      /* sidebar masthead — the brand crest front and center at the top of
+         the rail, wordmark beneath it, closed by a gold hairline. Same crest
+         as app.alchemylake.com; sized to be seen, not squeezed inline. */
+      .al-side-head { text-align:center; padding: 4px 0 0; }
+      .al-side-head img { width:46px; height:46px; display:block; margin:0 auto 7px;
+                          opacity:0.97; filter: drop-shadow(0 0 10px rgba(228,192,103,0.22)); }
       .al-side-mark { font-family:'Cormorant Garamond',Georgia,serif; font-weight:600;
-                       font-size: 25px; text-transform: uppercase; letter-spacing: 0.13em;
-                       line-height: 1.12; color: var(--ivory); margin: 0; }
+                       font-size: 23px; text-transform: uppercase; letter-spacing: 0.16em;
+                       line-height: 1.14; color: var(--ivory); margin: 0; }
       .al-side-mark span { color: var(--gold-bright); }
+      .al-side-rule { height:1px; margin:11px auto 13px; width:72%;
+                      background: linear-gradient(90deg, transparent,
+                                  rgba(228,192,103,0.55), transparent); }
 
       /* enterprise control card — the shared shell for every lane's
          source/format panel and every result's download+save actions */
@@ -495,11 +536,12 @@ def _check_wallet(key: str, url: str) -> None:
 
 
 with st.sidebar:
-    _mark_img = f'<img src="{_MARK_URI}" alt="">' if _MARK_URI else ""
+    _mark_img = f'<img src="{_MARK_URI}" alt="AlchemyLake crest">' if _MARK_URI else ""
     st.markdown(
-        f'<div class="al-side-mark-row">{_mark_img}'
-        '<div class="al-side-mark">Alchemy<br><span>Lake</span></div></div>'
-        '<div class="al-kicker" style="margin:9px 0 14px">Connection</div>',
+        f'<div class="al-side-head">{_mark_img}'
+        '<div class="al-side-mark">Alchemy <span>Lake</span></div>'
+        '<div class="al-side-rule"></div></div>'
+        '<div class="al-kicker" style="margin:0 0 12px">Connection</div>',
         unsafe_allow_html=True,
     )
 
@@ -578,9 +620,10 @@ _ICON_SUN = (
 
 _TICKER = (
     f"New accounts start with {WELCOME_GRANT_CREDITS} free credits ✦ Every lane binds to "
-    "governed data ✦ Analyst 1 credit (6 with Council) ✦ Report 10 ✦ Podcast 25 ✦ "
-    "Presentation 40 ✦ Video Briefing 40 ✦ Infographic 45 ✦ Music 50 ✦ Failed runs refunded ✦ "
-    "Numbers verified, not trusted ✦ Governed data in, sealed deliverables out ✦ "
+    "governed data ✦ Analyst 1 credit (6 with Council) ✦ Report 10 ✦ Deep Research 18 ✦ "
+    "Podcast 25 ✦ Presentation 40 ✦ Video Briefing 40 ✦ Infographic 45 ✦ Music 50 ✦ "
+    "Failed runs refunded ✦ Numbers verified, not trusted ✦ "
+    "Governed data in, sealed deliverables out ✦ "
 )
 
 # Shared with the "Where your data goes" expander down by the footer — kept as
@@ -627,6 +670,7 @@ if not api_key:
 
 (
     tab_render,
+    tab_research,
     tab_image,
     tab_report,
     tab_deck,
@@ -640,10 +684,12 @@ if not api_key:
 ) = st.tabs(
     [
         # Same order as the craft menu at app.alchemylake.com/studio — Analyst
-        # first, then the six lanes in that exact sequence. Templates has no
-        # equivalent there (it's a Databricks-only shortcut), so it sits after
-        # the lanes and just before Sources rather than breaking up that order.
+        # first, then Deep Research, then the six lanes in that exact sequence.
+        # Templates has no equivalent there (it's a Databricks-only shortcut),
+        # so it sits after the lanes and just before Sources rather than
+        # breaking up that order.
         "Analyst",
+        "Deep Research",
         "Infographic",
         "Report",
         "Presentation",
@@ -674,6 +720,47 @@ def load_sources(api_key: str, url: str) -> list[dict[str, Any]]:
     if isinstance(data, dict):
         return data.get("sources", [])
     return data if isinstance(data, list) else []
+
+
+# Origin → (sort rank, short badge). Workspace tables lead, demo data trails —
+# the same catalog order the web sidebar uses.
+_ORIGIN_ORDER = {
+    "unity_catalog": (0, "workspace"),
+    "genie": (1, "genie"),
+    "uploaded": (2, "upload"),
+    "sample_lakehouse": (3, "sample"),
+}
+
+
+def source_options(sources: list[dict[str, Any]], unbound_label: str) -> dict[str, str]:
+    """Selectbox labels for the governed sources, grouped by origin.
+
+    Unity Catalog entries show the short table name with its catalog.schema
+    path so ten tables from three schemas stay tellable-apart; everything
+    else shows its name with an origin badge and row count.
+    """
+
+    def rank(s: dict[str, Any]) -> tuple[int, str]:
+        r, _ = _ORIGIN_ORDER.get(str(s.get("origin", "")), (9, "?"))
+        return (r, str(s.get("name", "")))
+
+    options: dict[str, str] = {unbound_label: ""}
+    for s in sorted(sources, key=rank):
+        origin = str(s.get("origin", "?"))
+        _, badge = _ORIGIN_ORDER.get(origin, (9, origin))
+        name = str(s.get("name", s.get("id", "")))
+        rows = s.get("row_count")
+        rows_txt = f" · {rows:,} rows" if isinstance(rows, int) else ""
+        parts = name.split(".")
+        if origin == "unity_catalog" and len(parts) >= 3:
+            label = f"◈ {parts[-1]} — {'.'.join(parts[:-1])}{rows_txt}"
+        else:
+            label = f"{name} · {badge}{rows_txt}"
+        # Selectbox keys must be unique; collide only on identical names.
+        while label in options:
+            label += " ·"
+        options[label] = str(s.get("id", ""))
+    return options
 
 
 # --------------------------------------------------------------------------- #
@@ -849,12 +936,10 @@ with tab_render:
                     st.error(str(exc))
 
             sources = st.session_state.get("sources", [])
-            options = {"— Unbound (no source) —": ""}
-            for s in sources:
-                label = f"{s.get('name', s.get('id'))}  ·  {s.get('origin', '?')}"
-                options[label] = s.get("id", "")
+            options = source_options(sources, "— Unbound (no source) —")
             choice = st.selectbox("Bound source", list(options.keys()))
             source_id = options[choice]
+            compare_id = ""
             if source_id:
                 picked = next((s for s in sources if s.get("id") == source_id), {})
                 rows = picked.get("row_count", "?")
@@ -862,6 +947,25 @@ with tab_render:
                     f'<div class="al-kicker">rows: {rows} · origin: {picked.get("origin","?")}</div>',
                     unsafe_allow_html=True,
                 )
+                # Comparative run: a second governed source; the platform
+                # computes both dossiers plus deterministic deltas and the
+                # analyst narrates the contrast — figures still verified.
+                cmp_options = {
+                    "— no comparison —": "",
+                    **{
+                        label: sid
+                        for label, sid in source_options(sources, "—").items()
+                        if sid and sid != source_id
+                    },
+                }
+                cmp_choice = st.selectbox(
+                    "Compare with (optional)",
+                    list(cmp_options.keys()),
+                    help="The analyst receives both sources' verified facts plus "
+                    "platform-computed deltas (trend vs trend, latest totals, "
+                    "YoY) — ask it to contrast them.",
+                )
+                compare_id = cmp_options[cmp_choice]
 
             st.markdown(
                 '<div class="al-card-label" style="margin-top:16px">Panel</div>',
@@ -874,6 +978,27 @@ with tab_render:
                 "judge synthesizes the best answer — 6 credits instead of 1, "
                 "slower, for higher-stakes copy.",
             )
+
+            # Conversation continuity: every chat response carries a
+            # thread_id; passing it back keeps one analyst session — and for
+            # Genie sources, one *Genie conversation*, so follow-ups
+            # ("now break that down by region") resolve in context instead
+            # of starting cold.
+            thread_id = st.session_state.get("analyst_thread_id", "")
+            if thread_id:
+                st.markdown(
+                    '<div class="al-kicker" style="margin-top:10px">'
+                    "conversation · continuing</div>",
+                    unsafe_allow_html=True,
+                )
+                st.caption(
+                    "Follow-ups stay in context (Genie sources keep one "
+                    "governed conversation in your workspace)."
+                )
+                if st.button("Start a new conversation", key="render_new_thread"):
+                    st.session_state["analyst_thread_id"] = ""
+                    st.session_state["analyst_result"] = None
+                    st.rerun()
 
     with col_l:
         direction_card = st.container(border=True)
@@ -896,8 +1021,12 @@ with tab_render:
                     args: dict[str, Any] = {"prompt": prompt.strip()}
                     if source_id:
                         args["source_id"] = source_id
+                    if compare_id:
+                        args["compare_source_id"] = compare_id
                     if council:
                         args["council"] = True
+                    if st.session_state.get("analyst_thread_id"):
+                        args["thread_id"] = st.session_state["analyst_thread_id"]
                     with st.spinner("Transmuting under governance…"):
                         try:
                             text, is_err = tool_call(
@@ -909,10 +1038,19 @@ with tab_render:
                         st.session_state["analyst_result"] = None
                         st.error(text)
                     else:
+                        # Capture the session id the platform returns so the
+                        # next question continues this conversation.
+                        m = re.search(r"\(thread_id:\s*([A-Za-z0-9_-]+)", text)
+                        if m:
+                            st.session_state["analyst_thread_id"] = m.group(1)
+                            text = re.sub(
+                                r"\n*\(thread_id:[^)]*\)", "", text
+                            ).strip()
                         st.session_state["analyst_result"] = {
                             "text": text,
                             "stamp": datetime.now().strftime("%Y%m%d-%H%M"),
                         }
+                        st.rerun()
 
             # Rendered from session_state, not inline under the button — see
             # the note in render_media_lane() on why Save-to-Databricks needs
@@ -934,6 +1072,116 @@ with tab_render:
                 )
 
 # --------------------------------------------------------------------------- #
+# Tab: Deep Research — planned multi-step investigation → sealed dossier
+# --------------------------------------------------------------------------- #
+
+with tab_research:
+    st.subheader("Deep Research — a planned, multi-step investigation")
+    st.caption(
+        "Bind a source (required). The platform decomposes your brief into "
+        "sub-questions and answers each with real evidence — Genie sources "
+        "get governed SQL follow-ups inside your own Databricks workspace "
+        "(one continuing Genie conversation); uploads, Unity Catalog tables "
+        "and samples are interrogated through the deterministic facts engine. "
+        "You get a sealed research dossier: executive summary, one finding "
+        "per step, method note, recommendations, watchlist — as a PDF plus "
+        "an Excel evidence workbook. 18 credits."
+    )
+    col_l, col_r = st.columns([2, 1], gap="large")
+    with col_r:
+        research_card = st.container(border=True)
+        with research_card:
+            st.markdown('<div class="al-card-label">Source</div>', unsafe_allow_html=True)
+            research_source = _source_picker("research")
+            if research_source and research_source.startswith("genie:"):
+                st.markdown(
+                    '<div class="al-kicker" style="margin-top:8px">'
+                    "genie · governed SQL steps</div>",
+                    unsafe_allow_html=True,
+                )
+                st.caption(
+                    "Each research step runs as a Genie question in your "
+                    "workspace (≈1.5 DBU each, billed to your Databricks "
+                    "account — first 150 DBUs/user/month are free there)."
+                )
+    with col_l:
+        research_dir_card = st.container(border=True)
+        with research_dir_card:
+            st.markdown('<div class="al-card-label">Brief</div>', unsafe_allow_html=True)
+            research_prompt = st.text_area(
+                "Brief",
+                height=150,
+                key="research_prompt",
+                label_visibility="collapsed",
+                placeholder="e.g. Why did Q3 dip and what should we do about it? "
+                "Investigate the trend, the biggest movers, seasonality, and "
+                "concentration risk.",
+            )
+            research_run = st.button(
+                "Run Deep Research (18 credits)",
+                key="research_btn",
+                use_container_width=True,
+            )
+    if research_run:
+        if not api_key:
+            st.warning("Paste a developer key in the sidebar first.")
+        elif not research_source:
+            st.warning("Deep Research must bind a governed source — pick one on the right.")
+        elif not research_prompt.strip():
+            st.warning("Write a research brief first.")
+        else:
+            with st.spinner(
+                "Planning sub-questions, gathering evidence step by step, "
+                "synthesizing the dossier… (this is the platform's longest "
+                "lane — a few minutes is normal)"
+            ):
+                try:
+                    text, is_err = tool_call(
+                        "render_deep_research",
+                        {
+                            "prompt": research_prompt.strip(),
+                            "source_id": research_source,
+                        },
+                        api_key,
+                        mcp_url,
+                    )
+                except MCPError as exc:
+                    text, is_err = str(exc), True
+            if is_err:
+                st.session_state["research_result"] = None
+                st.error(text)
+            else:
+                st.session_state["research_result"] = text
+
+    # Rendered from session_state — see the note in render_media_lane() on why
+    # Save-to-Databricks needs this to survive its own click's rerun.
+    research_result = st.session_state.get("research_result")
+    if research_result:
+        body, _, seal = research_result.partition("\n---\n")
+        lines = body.splitlines()
+        r_assets: list[tuple[str, str]] = []
+        shown = body
+        for i, line in enumerate(lines):
+            line = line.strip()
+            if line.startswith("http"):
+                if ".xlsx" in line.lower():
+                    label = "Excel evidence workbook"
+                elif not r_assets:
+                    label = "Research dossier (PDF)"
+                else:
+                    label = lines[i - 1].strip().rstrip(":") if i else "Result file"
+                r_assets.append((label, line))
+                shown = shown.replace(line, "")
+        remainder = shown.strip()
+        if remainder:
+            with st.expander("Findings summary — from the sealed dossier", expanded=True):
+                st.markdown(remainder)
+        if seal:
+            st.markdown(f'<div class="al-seal">{seal.strip()}</div>', unsafe_allow_html=True)
+        for i, (label, url) in enumerate(r_assets):
+            asset_actions(key=f"research_{i}", url=url, file_label=label)
+
+# --------------------------------------------------------------------------- #
 # Media lanes: imagery, video, music, voice
 # --------------------------------------------------------------------------- #
 
@@ -946,9 +1194,7 @@ def _source_picker(key: str) -> str:
         except MCPError as exc:
             st.error(str(exc))
     sources = st.session_state.get("sources", [])
-    options = {"— Unbound (free prompt) —": ""}
-    for s in sources:
-        options[f"{s.get('name', s.get('id'))}  ·  {s.get('origin', '?')}"] = s.get("id", "")
+    options = source_options(sources, "— Unbound (free prompt) —")
     choice = st.selectbox("Bound source", list(options.keys()), key=f"{key}_src")
     source_id = options[choice]
     if source_id:
@@ -961,7 +1207,7 @@ def _source_picker(key: str) -> str:
     return source_id
 
 
-# Style/format libraries — ids must match the platform's MCP tool schemas exactly.
+# Style/format libraries — ids must match apps/api/app/atelier.py exactly.
 VIDEO_STYLES = {
     "consultant_walkthrough": "Consultant Walkthrough",
     "newsroom_segment": "Newsroom Segment",
@@ -1349,14 +1595,14 @@ with tab_deck:
 # Tab: Templates (one-click recipes via list_recipes / run_recipe)
 # --------------------------------------------------------------------------- #
 #
-# A "template" (the platform calls it a recipe) is a shortcut: it pre-selects
-# a lane (image / report / deck / chat / audio / video) and a specific expert
+# A "template" (the API calls it a recipe) is a shortcut: it pre-selects a
+# lane (image / report / deck / chat / audio / video) and a specific expert
 # art direction, so instead of writing your own brief you just bind a source
-# and click. The catalog below mirrors the platform's recipe list + the
-# credits on each lane's tab exactly (same hand-synced convention as
-# VIDEO_STYLES / MUSIC_STYLES / PODCAST_STYLES above) — kept local so this tab
-# renders a real, priced catalog instantly instead of an empty state behind a
-# "Load" button and a literal "? cr" placeholder (list_recipes doesn't return
+# and click. The catalog below mirrors apps/api/app/recipes.py + the credits
+# on each lane's tab exactly (same hand-synced convention as VIDEO_STYLES /
+# MUSIC_STYLES / PODCAST_STYLES above) — kept local so this tab renders a
+# real, priced catalog instantly instead of an empty state behind a "Load"
+# button and a literal "? cr" placeholder (list_recipes doesn't return
 # pricing; only the rate card, which this App doesn't call directly, has it).
 
 RECIPE_CATALOG: list[dict[str, Any]] = [
@@ -1594,6 +1840,63 @@ with tab_recipes:
 
 with tab_sources:
     st.subheader("Governed sources bound to your account")
+
+    upload_card = st.container(border=True)
+    with upload_card:
+        st.markdown(
+            '<div class="al-card-label">Bring your own data</div>',
+            unsafe_allow_html=True,
+        )
+        st.caption(
+            "CSV, Excel (.xlsx/.xls), PDF, Word, text or Markdown — up to 6MB. "
+            "Tables are extracted and registered as a governed source; "
+            "documents with no table bind as a sectioned corpus (headings, "
+            "word counts, excerpts). Either way, every lane works on it — "
+            "reports, decks, videos, podcasts, deep research — no Databricks "
+            "required."
+        )
+        uploaded = st.file_uploader(
+            "Upload a file",
+            type=["csv", "tsv", "xlsx", "xlsm", "xls", "pdf", "docx", "txt", "md"],
+            key="src_upload",
+            label_visibility="collapsed",
+        )
+        if uploaded is not None and st.button(
+            f"Register “{uploaded.name}” as a governed source",
+            key="src_upload_btn",
+            use_container_width=True,
+        ):
+            if not api_key:
+                st.warning("Paste a developer key in the sidebar first.")
+            else:
+                import base64 as _b64
+
+                raw = uploaded.getvalue()
+                if len(raw) > 6 * 1024 * 1024:
+                    st.error("That file is over the 6MB upload cap.")
+                else:
+                    with st.spinner("Parsing, sealing, registering…"):
+                        try:
+                            text, is_err = tool_call(
+                                "upload_source",
+                                {
+                                    "filename": uploaded.name,
+                                    "content_base64": _b64.b64encode(raw).decode(),
+                                },
+                                api_key,
+                                mcp_url,
+                            )
+                        except MCPError as exc:
+                            text, is_err = str(exc), True
+                    if is_err:
+                        st.error(text)
+                    else:
+                        st.success(text)
+                        try:
+                            st.session_state["sources"] = load_sources(api_key, mcp_url)
+                        except MCPError:
+                            pass
+
     if st.button("Refresh sources", key="refresh_sources"):
         try:
             st.session_state["sources"] = load_sources(api_key, mcp_url)
@@ -1601,17 +1904,25 @@ with tab_sources:
             st.error(str(exc))
     sources = st.session_state.get("sources", [])
     if sources:
+        def _rank(s: dict[str, Any]) -> tuple[int, str]:
+            r, _ = _ORIGIN_ORDER.get(str(s.get("origin", "")), (9, "?"))
+            return (r, str(s.get("name", "")))
+
         rows = [
             {
-                "id": s.get("id", ""),
-                "name": s.get("name", ""),
-                "origin": s.get("origin", ""),
+                "source": s.get("name", ""),
+                "origin": _ORIGIN_ORDER.get(str(s.get("origin", "")), (9, s.get("origin", "?")))[1],
                 "rows": s.get("row_count", ""),
                 "columns": ", ".join(s.get("columns", []))[:80],
+                "id": s.get("id", ""),
             }
-            for s in sources
+            for s in sorted(sources, key=_rank)
         ]
         st.dataframe(rows, use_container_width=True, hide_index=True)
+        st.caption(
+            f"{len(rows)} governed sources — workspace tables first, demo data last. "
+            "Bind any of them from the pickers on each lane."
+        )
     else:
         st.caption("No sources loaded yet. Press **Refresh sources** (needs a key).")
 
@@ -1684,6 +1995,7 @@ required. Top up 500 more for $5 from Studio when you run out.
 | Analyst (chat) | 1 |
 | Analyst + Model Council | 6 |
 | Report (PDF + Excel) | 10 |
+| Deep Research (PDF dossier + Excel) | 18 |
 | Podcast | 25 |
 | Presentation (5 slides) | 40 (+4 / extra slide) |
 | Video Briefing | 40 |
@@ -1695,7 +2007,7 @@ refunded** — you're never charged for a run that didn't produce anything.
             """
         )
 
-    with st.expander("The seven lanes, briefly"):
+    with st.expander("The eight lanes, briefly"):
         st.markdown(
             """
 Binding a source runs the **Insight Engine** — trend with fit quality, outliers,
@@ -1705,7 +2017,14 @@ enterprise consultant, plus the lane's craft specialist) designs the deliverable
 around those verified facts.
 
 - **Analyst (chat)** — narrative/copy; every figure verified against the
-  platform-computed facts when bound.
+  platform-computed facts when bound. Conversations continue: follow-ups keep
+  their context, and Genie sources keep one governed Genie conversation in
+  your workspace across turns.
+- **Deep Research** — a planned multi-step investigation of one source: the
+  brief is decomposed into sub-questions, each answered with real evidence
+  (governed Genie SQL for Genie sources; the deterministic facts engine for
+  uploads/UC/samples), then synthesized into a sealed dossier — PDF + Excel
+  evidence workbook.
 - **Infographic** — a designed data poster: headline stat, insight callouts,
   branded provenance strip rendered into the image.
 - **Report** — an enterprise PDF dossier (cover, KPI band, chart sections,
@@ -1836,8 +2155,13 @@ The same key works three ways:
    pasting anything — see `app.yaml` in the bundle for the exact steps.
 2. **Any MCP agent** (Genie / Agent Bricks, Claude, Cursor) — register
    `https://app.alchemylake.com/api/mcp` as an MCP server with
-   `Authorization: Bearer alk_…`; all eleven tools appear automatically.
+   `Authorization: Bearer alk_…`; all thirteen tools appear automatically
+   (including `upload_source` for bring-your-own files and
+   `render_deep_research` for sealed dossiers).
 3. **Raw JSON-RPC** — from a notebook, job, or shell, via `requests`/`curl`.
+4. **The REST API + CLI** — the same key drives
+   `https://app.alchemylake.com/api/public/v1` (OpenAPI published) and the
+   `alchemylake` CLI (`npx alchemylake render report --source …`).
             """
         )
 
@@ -1894,6 +2218,9 @@ chart); AlchemyLake turns it *out* — the activation layer the Lakehouse lacks:
 
 - **Analyst (chat)** — narrative/copy whose every figure is derivable from the bound
   rows, then **verified** against platform-computed facts (score on the seal).
+  Follow-ups continue the same conversation — Genie sources included.
+- **Deep Research** — a planned multi-step investigation (sub-questions →
+  evidence → synthesis) sealed into a PDF dossier + Excel evidence workbook.
 - **Report** — an enterprise PDF dossier (KPI band, chart sections, statistical
   appendix, citations, methodology) + an **Excel evidence workbook**.
 - **Presentation** — a downloadable **.pptx** with a read-aloud presenter script
@@ -1924,10 +2251,11 @@ credit metering, provenance seals, verification, approval gates, and role checks
    analysts a governed render surface next to their data — SSO-authenticated,
    no data leaves except the rows you bind.
 2. **From any agent (MCP):** register `https://app.alchemylake.com/api/mcp` as an
-   external MCP server for Genie / Agent Bricks, Claude, or Cursor. Eleven tools
-   (`list_governed_sources`, `render_governed_chat`, `render_report`,
-   `render_presentation`, `render_infographic`, `render_video_briefing`,
-   `render_music`, `render_podcast`, `list_recipes`, `run_recipe`, `get_wallet`)
+   external MCP server for Genie / Agent Bricks, Claude, or Cursor. Thirteen tools
+   (`list_governed_sources`, `upload_source`, `render_governed_chat`,
+   `render_deep_research`, `render_report`, `render_presentation`,
+   `render_infographic`, `render_video_briefing`, `render_music`,
+   `render_podcast`, `list_recipes`, `run_recipe`, `get_wallet`)
    appear automatically — so a Genie answer can become a sealed board deck,
    dossier, or infographic in one agent turn.
         """

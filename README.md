@@ -2,13 +2,15 @@
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](./LICENSE)
 [![Databricks CLI](https://img.shields.io/badge/Databricks%20CLI-%E2%89%A5%200.230-FF3621)](https://docs.databricks.com/dev-tools/cli/)
-[![MCP](https://img.shields.io/badge/MCP-11%20tools-172478)](https://app.alchemylake.com/docs#developers)
+[![MCP](https://img.shields.io/badge/MCP-13%20tools-172478)](https://app.alchemylake.com/docs#developers)
 
 Install a **governed creative** surface directly inside your Databricks
 workspace. AlchemyLake turns the data your lakehouse already trusts into
 finished deliverables **Genie doesn't make**: board-ready **PowerPoint decks
 with a read-aloud script and Q&A prep under every slide**, enterprise **PDF
-dossiers with a statistical appendix and an Excel evidence workbook**, designed
+dossiers with a statistical appendix and an Excel evidence workbook**,
+**deep-research dossiers** (a planned multi-step investigation — Genie sources
+get governed SQL follow-ups in one continuing conversation), designed
 **infographics**, animated **video briefings with narration** (six formats),
 two-host **data podcasts** (five formats), and **sonified scores** (six
 genres) whose tempo follows your growth.
@@ -80,11 +82,15 @@ lakehouse except as the exact rows you choose to bind.
 | Path | What you get | Setup |
 |---|---|---|
 | **1. The App (this bundle)** | A governed render UI inside your workspace, SSO’d, next to your data | `databricks bundle deploy` |
-| **2. MCP for Genie / Agent Bricks** | Every agent gains **11 governed tools** (`list_governed_sources`, `get_wallet`, `render_governed_chat`, `render_infographic`, `render_report`, `render_presentation`, `render_video_briefing`, `render_music`, `render_podcast`, `list_recipes`, `run_recipe`) — all render tools accept `source_id` for data-bound, verified output | Register one URL |
+| **2. MCP for Genie / Agent Bricks** | Every agent gains **13 governed tools** (`list_governed_sources`, `upload_source`, `get_wallet`, `render_governed_chat`, `render_deep_research`, `render_infographic`, `render_report`, `render_presentation`, `render_video_briefing`, `render_music`, `render_podcast`, `list_recipes`, `run_recipe`) — all render tools accept `source_id` for data-bound, verified output, and chat returns a `thread_id` so a Genie conversation continues across agent turns | Register one URL |
 | **3. `ai_render()` in SQL** | Sealed narrative from a query or Genie space | Run `sql/ai_render.sql` |
 
 **What agents can ship from a table** (things a Genie answer alone cannot):
 
+- `render_deep_research` — a planned multi-step investigation: the brief is
+  decomposed into sub-questions, each answered with real evidence (Genie
+  sources get governed SQL follow-ups in one continuing conversation), then
+  synthesized into a sealed PDF dossier + Excel evidence workbook.
 - `render_presentation` — a .pptx board deck, 5–20 slides, speaker script + Q&A
   in every notes pane, AI cover art, real charts from the rows.
 - `render_report` — an enterprise PDF dossier (KPI band, chart sections,
@@ -106,6 +112,14 @@ lakehouse except as the exact rows you choose to bind.
 
 Prefer plain REST? The same keys work on the public API:
 `https://app.alchemylake.com/api/public/v1` (OpenAPI at `/api/public/v1/openapi.json`).
+Prefer a terminal? `npx alchemylake` is a zero-dependency CLI over that API:
+
+```bash
+export ALCHEMYLAKE_API_KEY=alk_YOUR_KEY
+npx alchemylake upload ./q3-actuals.xlsx       # CSV/Excel/PDF/Word/text → governed source
+npx alchemylake render report --prompt "Board brief" --source up.1a2b3c
+npx alchemylake render deep_research --prompt "Why did Q3 dip?" --source genie:dbx1
+```
 
 ---
 
@@ -129,10 +143,10 @@ flowchart LR
     AL(["AlchemyLake<br/>governed render platform"])
 
     UC -- "bind rows" --> App
-    Genie -- "bind an answer" --> App
+    Genie -- "bind an answer<br/>(conversation continues)" --> App
     CSV -- "bind (BYO-data)" --> App
     App <-- "MCP: render, verify, seal" --> AL
-    Agents <-- "11 MCP tools, same contract" --> AL
+    Agents <-- "13 MCP tools, same contract" --> AL
     AL -. "no-egress text tier" .-> FM["Your Databricks<br/>Foundation Model endpoint"]
 
     AL --> Out(["Sealed deliverable<br/>PDF · PPTX · image · video · audio"])
@@ -162,20 +176,23 @@ itself, in every format, so it survives being forwarded, downloaded, or printed.
 | Answers a question inside the workspace | ✅ | ✅ |
 | Ships a board-ready **.pptx** with a read-aloud script + Q&A prep per slide | | ✅ |
 | Ships an enterprise **PDF dossier + Excel evidence workbook** | | ✅ |
+| Runs a **deep-research investigation** (planned Genie SQL follow-ups → sealed dossier) | | ✅ |
 | Ships a designed **infographic** with figures rendered in-image | | ✅ |
 | Ships a narrated **video briefing** or two-host **podcast** | | ✅ |
 | Every number checked against the source *after* generation and scored | | ✅ |
-| Provenance (source, rows, hash, score) embedded in the output file | | ✅ |
+| Provenance (source, rows, hash, score — plus Genie reasoning, SQL, and trusted-asset status) embedded in the output | | ✅ |
+| Scores your Genie space's curation health and certifies it with live probes | | ✅ |
 | Metered by an auditable, per-render credit ledger | | ✅ |
 
 ### What people actually ask it for
 
 Every lane binds to a governed source, so the figures in the output are the figures
-in your table — not a paraphrase. A sample of real workflows across the seven lanes:
+in your table — not a paraphrase. A sample of real workflows across the eight lanes:
 
 | Lane | Ships | Example asks |
 |---|---|---|
-| **Analyst** (chat) | A sealed, sourced answer | *"Draft the board narrative from the certified loan book."* · *"This month's ridership performance, in the agency's voice."* |
+| **Analyst** (chat) | A sealed, sourced answer — follow-ups stay in context | *"Draft the board narrative from the certified loan book."* · *"Now break that down by region."* |
+| **Deep Research** | A sealed investigation dossier (PDF + Excel) | *"Why did Q3 dip, and what should we do about it?"* · *"Investigate concentration risk across our segments."* |
 | **Infographic** | A KPI poster, figures rendered in-image | *"This week's sales milestone, ready for social."* · *"'45 days without a recordable incident' for the plant floor."* |
 | **Report** | PDF dossier + Excel evidence workbook | *"Quarterly board-packet narrative, sealed."* · *"Compliance rollup with a hash of the source data baked in."* |
 | **Presentation** | .pptx, speaker script + Q&A per slide | *"QBR deck with the CRM's exact numbers."* · *"Steering-committee deck anyone on the team can present cold."* |
@@ -262,13 +279,15 @@ No bundle required. In your agent/MCP client configuration add:
 }
 ```
 
-Genie / Agent Bricks, Claude, and Cursor will discover the eleven tools
+Genie / Agent Bricks, Claude, and Cursor will discover the thirteen tools
 automatically. Ask, for example: *“Using AlchemyLake, write a sealed 3-bullet
 executive summary of `gold_ridership_national_monthly`”* — or go bigger:
 *“Render an 8-slide presentation of that table titled Ridership Momentum”*
-(a .pptx with a presenter script under every slide), or *“Run the
-campaign-pack recipe”* (`run_recipe` renders the poster, the report, and the
-copy in one call, all verified and sealed).
+(a .pptx with a presenter script under every slide), *“Run deep research on
+why ridership dipped this quarter”* (`render_deep_research` returns a sealed
+dossier + evidence workbook), or *“Run the campaign-pack recipe”*
+(`run_recipe` renders the poster, the report, and the copy in one call, all
+verified and sealed).
 
 ---
 
@@ -310,8 +329,18 @@ step to your own Databricks Foundation Model endpoint instead; see
 key — no App, no extra compute resource.
 
 **Can agents use this without a human in the loop?** Yes — that's Path 2. Register
-`/api/mcp` once and Genie, Agent Bricks, Claude, and Cursor all gain the same eleven
+`/api/mcp` once and Genie, Agent Bricks, Claude, and Cursor all gain the same thirteen
 governed tools, metered and sealed exactly like the UI.
+
+**What does a Genie question cost?** Genie compute bills inside *your* Databricks
+workspace (serverless DBUs — roughly 1.5 DBU ≈ $0.11 per question; Databricks
+gives every user 150 free Genie DBUs a month). AlchemyLake credits meter only the
+render itself, and the Studio shows the DBU estimate next to any Genie source.
+
+**I don't have Databricks — can I still use everything?** Yes. Upload CSV, Excel,
+PDF, Word, text or Markdown (in the web Studio, this App's Sources tab, the API,
+the CLI, or the `upload_source` MCP tool) and every lane — including Deep
+Research — runs with the same verification and seals.
 
 **Is AlchemyLake a Databricks product?** No. AlchemyLake is an independent platform
 by [Zorost Intelligence](mailto:info@zorost.com) that plugs into Databricks; this
