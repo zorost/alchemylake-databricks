@@ -2364,8 +2364,8 @@ hashed at rest, revocable individually). Use it three ways:
     )
     st.subheader("Install (one command)")
     st.code(
-        "git clone https://github.com/zorost/Alchemy-Lake\n"
-        "cd Alchemy-Lake/databricks\n"
+        "git clone https://github.com/zorost/alchemylake-databricks\n"
+        "cd alchemylake-databricks\n"
         "databricks bundle deploy -t prod\n"
         "databricks bundle run alchemylake_app -t prod",
         language="bash",
@@ -2390,7 +2390,7 @@ st.markdown(
     f'Licensing &mdash; the App is proprietary; the open engine is FSL-1.1 (converts to '
     f'Apache-2.0); the SDK &amp; MCP client are Apache-2.0. '
     f'<a href="{DOCS_URL}#licensing">Licensing</a> &middot; '
-    f'<a href="https://github.com/zorost/Alchemy-Lake/blob/main/LICENSE">LICENSE</a>.<br>'
+    f'<a href="https://github.com/zorost/alchemylake-databricks/blob/main/LICENSE">LICENSE</a>.<br>'
     f'Your data stays in your lakehouse &mdash; only the rows you bind are used, and never '
     f'for training. <a href="{DOCS_URL}#residency">Data security &amp; residency &rarr;</a>'
     f'</div>',
